@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+     colors="true"
+     processIsolation="false"
+     stopOnFailure="false"
+     cacheResult="false"
+>
+    <testsuites>
+        <testsuite name="Mail">
+            <directory>.</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

@@ -1,0 +1,34 @@
+{
+	"name": "leuchtdiode/mezzio-mail",
+	"description": "Mezzio module for handling mails",
+	"type": "library",
+	"license": "MIT",
+	"homepage": "https://try2catch.com",
+	"authors": [
+		{
+			"name": "Alex Schloegl",
+			"email": "alex@try2catch.com",
+			"homepage": "https://try2catch.com",
+			"role": "Developer"
+		}
+	],
+	"keywords": [
+		"Mezzio",
+		"Module",
+		"Mail"
+	],
+	"require": {
+		"php": "~8.3.0 || ~8.4.0",
+		"laminas/laminas-servicemanager": "^3.22.0",
+		"leuchtdiode/mezzio-console": "^0.0.1",
+		"laminas/laminas-mail": "^2.25.0",
+		"ramsey/uuid-doctrine": "^2.1.0",
+		"leuchtdiode/mezzio-common": "^1.0.0"
+	},
+	"autoload": {
+		"psr-4": {
+			"Mail\\": "src/",
+			"MailTest\\": "test/src/"
+		}
+	}
+}
