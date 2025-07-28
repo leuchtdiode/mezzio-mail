@@ -30,12 +30,21 @@ readonly class BodyCreator
 
 		$placeholderValues['content'] = $this->phpRenderer->render(
 			$contentModel->getTemplate(),
-			$contentModel->getVariables()
+			[
+				'layout' => false,
+				...$contentModel->getVariables(),
+			]
 		);
 
 		$layoutModel = new ViewModel($placeholderValues);
 		$layoutModel->setTemplate($mail->getLayoutTemplate());
 
-		return $this->phpRenderer->render($layoutModel->getTemplate(), $layoutModel->getVariables());
+		return $this->phpRenderer->render(
+			$layoutModel->getTemplate(),
+			[
+				'layout' => false,
+				...$layoutModel->getVariables(),
+			]
+		);
 	}
 }

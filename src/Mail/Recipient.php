@@ -14,14 +14,14 @@ class Recipient
 
 	private function __construct(
 		$email,
-		$name = null
+		?string $name = null
 	)
 	{
 		$this->email = $email;
 		$this->name = $name;
 	}
 
-	public static function create(string $email, string $name = null): self
+	public static function create(string $email, ?string $name = null): self
 	{
 		return new self($email, $name);
 	}

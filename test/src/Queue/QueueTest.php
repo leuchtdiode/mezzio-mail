@@ -61,8 +61,8 @@ class QueueTest extends BaseTestCase
 		$mail->setReplyTo(
 			Recipient::create('reply-to@anything.com', 'ReplyTo')
 		);
-		$mail->setLayoutTemplate('testing/mail/test-layout');
-		$mail->setContentTemplate('testing/mail/test-template');
+		$mail->setLayoutTemplate('testing::test-layout');
+		$mail->setContentTemplate('testing::test-template');
 		$mail->setPlaceholderValues(
 			(new TestPlaceholderValues())
 				->setPlaceholder('test-placeholder')
@@ -98,6 +98,7 @@ class QueueTest extends BaseTestCase
 			$entity->getCreatedAt()
 				->format('Y-m-d'));
 		$this->assertEquals('test betreff', $entity->getSubject());
+
 		$this->assertEquals($this->getExpectedBody(), $entity->getBody());
 
 		$from = $entity->getFrom();

@@ -1,19 +1,17 @@
 <?php
 
-use Ramsey\Uuid\Doctrine\UuidType;
 use Doctrine\DBAL\Driver\PDO\SQLite\Driver;
+use Ramsey\Uuid\Doctrine\UuidType;
 
 return [
-	'view_manager' => [
-		'template_map'        => [
-			'testing/mail/test-layout'   => __DIR__ . '/../../test/view/test-layout.phtml',
-			'testing/mail/test-template' => __DIR__ . '/../../test/view/test-template.phtml'
-		],
-		'template_path_stack' => [
-			__DIR__ . '/../../test/view',
+
+	'templates' => [
+		'paths'  => [
+			'testing' => [ __DIR__ . '/../../test/view' ],
 		],
 	],
-	'doctrine'     => [
+
+	'doctrine' => [
 		'configuration' => [
 			'orm_default' => [
 				'proxy_dir' => __DIR__ . '/../../data/DoctrineORMModule/Proxy',
@@ -29,12 +27,12 @@ return [
 					'driver'      => 'pdo_sqlite',
 					'path'        => __DIR__ . '/../../data/testing/test.sqlite',
 				],
-			]
-		]
+			],
+		],
 	],
-	'mail' => [
+	'mail'     => [
 		'attachment' => [
-			'storeDirectory' => __DIR__ . '/../../data/testing/attachments'
+			'storeDirectory' => __DIR__ . '/../../data/testing/attachments',
 		],
 	],
 ];

@@ -23,7 +23,12 @@
 		"leuchtdiode/mezzio-console": "0.0.*",
 		"laminas/laminas-mail": "^2.25.0",
 		"ramsey/uuid-doctrine": "^2.1.0",
-		"leuchtdiode/mezzio-common": "^1.0.0"
+		"leuchtdiode/mezzio-common": "^1.0.0",
+		"mezzio/mezzio-laminasviewrenderer": "^2.18.0"
+	},
+	"require-dev": {
+		"leuchtdiode/mezzio-testing": "^1.0.0",
+		"mezzio/mezzio-laminasrouter": "^3.11.0"
 	},
 	"autoload": {
 		"psr-4": {
