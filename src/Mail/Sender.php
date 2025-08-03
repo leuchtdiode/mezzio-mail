@@ -5,41 +5,26 @@ namespace Mail\Mail;
 
 use Common\Util\Encoding;
 use DateTime;
-use Exception;
-use Laminas\Mail\AddressList;
-use Laminas\Mail\Message as MailMessage;
-use Laminas\Mail\Transport\Smtp;
-use Laminas\Mail\Transport\SmtpOptions;
-use Laminas\Mime\Message as MimeMessage;
-use Laminas\Mime\Mime;
-use Laminas\Mime\Part;
 use Mail\Db\MailEntity;
 use Mail\Db\MailEntitySaver;
 use Mail\Db\RecipientEntity;
 use Mail\Mail\Attachment\FileSystemHandler;
+use Symfony\Component\Mailer\Transport;
+use Symfony\Component\Mime\Address;
+use Symfony\Component\Mime\Email;
+use Symfony\Component\Mime\Part\DataPart;
 use Throwable;
 
-class Sender
+readonly class Sender
 {
-	private array $config;
-
-	private MailEntitySaver $saver;
-
-	private FileSystemHandler $attachmentFileSystemHandler;
-
-	private AddressList $to;
-
-	private AddressList $cc;
-
-	private AddressList $bcc;
-
 	private array $mailConfig;
 
-	public function __construct(array $config, MailEntitySaver $saver, FileSystemHandler $attachmentFileSystemHandler)
+	public function __construct(
+		private array $config,
+		private MailEntitySaver $saver,
+		private FileSystemHandler $attachmentFileSystemHandler
+	)
 	{
-		$this->config                      = $config;
-		$this->saver                       = $saver;
-		$this->attachmentFileSystemHandler = $attachmentFileSystemHandler;
 	}
 
 	/**
@@ -51,129 +36,147 @@ class Sender
 
 		try
 		{
-			$options = new SmtpOptions($this->mailConfig['smtp']);
+			$dsn = $this->mailConfig['dsn'] ?? null;
 
-			$transport = new Smtp($options);
+			if (!$dsn) // fallback for laminas-mail style config
+			{
+				$transportOptions = $this->mailConfig['smtp'] ?? [];
+				$connectionConfig = $transportOptions['connection_config'] ?? [];
 
-			$text          = new Part($mailEntity->getBody());
-			$text->type    = Mime::TYPE_HTML;
-			$text->charset = 'utf-8';
+				if (
+					($username = $connectionConfig['username'] ?? null)
+					&& ($password = $connectionConfig['password'] ?? null)
+				)
+				{
+					$dsn = sprintf(
+						'smtp://%s:%s@%s:%s',
+						$username,
+						$password,
+						$transportOptions['host'],
+						$transportOptions['port']
+					);
+				}
+				else
+				{
+					$dsn = sprintf(
+						'smtp://%s:%s',
+						$transportOptions['host'],
+						$transportOptions['port']
+					);
+				}
 
-			$mailParts = [
-				$text,
-			];
+				// TODO encryption tls?
+			}
+
+			$transport = Transport::fromDsn($dsn);
 
 			$from = $mailEntity->getFrom();
 
-			$message = new MailMessage();
-			$message->setEncoding('UTF-8');
-			$message->setSubject(
-				$this->isDebugEnabled()
-					? 'DEBUG: ' . $mailEntity->getSubject()
-					: $mailEntity->getSubject()
-			);
-			$message->setFrom(
-				$from->getEmail(),
-				$from->getName()
-			);
+			$email = (new Email())
+				->subject(
+					$this->isDebugEnabled()
+						? 'DEBUG: ' . $mailEntity->getSubject()
+						: $mailEntity->getSubject()
+				)
+				->from(
+					new Address(
+						$from->getEmail(),
+						$from->getName() ?? ''
+					)
+				)
+				->html($mailEntity->getBody(), 'utf-8');
 
+			// Reply-To
 			if (($replyTo = $mailEntity->getReplyTo()))
 			{
-				$message->setReplyTo(
-					$replyTo->getEmail(),
-					$replyTo->getName()
+				$email->replyTo(
+					new Address($replyTo->getEmail(), $replyTo->getName() ?? '')
 				);
 			}
-			else
-			{
-				$message->setReplyTo($from->getEmail());
-			}
 
-			$this->loadRecipients($mailEntity);
-
-			$message->setTo($this->to);
-			$message->setCc($this->cc);
-			$message->setBcc($this->bcc);
+			$this->loadRecipients($mailEntity, $email);
 
 			foreach ($mailEntity->getAttachments() as $attachmentEntity)
 			{
 				$content = $this->attachmentFileSystemHandler->read($attachmentEntity);
-
 				if (!$content)
 				{
 					continue;
 				}
 
-				$attachment = new Part($content);
-				$attachment->setType(
-					$attachmentEntity->getMimeType()
+				$filename = Encoding::utf8Decode(
+					$attachmentEntity->getName() . '.' . $attachmentEntity->getExtension()
 				);
-				$attachment->setFileName(
-					Encoding::utf8Decode($attachmentEntity->getName() . '.' . $attachmentEntity->getExtension())
-				);
-				$attachment->setDisposition(Mime::DISPOSITION_ATTACHMENT);
-				$attachment->setEncoding(Mime::ENCODING_BASE64);
-				$attachment->setCharset('UTF-8');
-				$attachment->setId($attachmentEntity->getId()
-					->toString());
 
-				$mailParts[] = $attachment;
+				$email->addPart(
+					new DataPart(
+						$content,
+						$filename,
+						$attachmentEntity->getMimeType(),
+						'base64'
+					)
+				);
 			}
 
-			$mimeMessage = new MimeMessage();
-			$mimeMessage->setParts($mailParts);
-
-			$message->setBody($mimeMessage);
-
-			$transport->send($message);
+			$transport->send($email);
 
 			$mailEntity->setSentAt(new DateTime());
-
 			$this->saver->save($mailEntity);
 
 			return true;
 		}
-		catch (Exception $ex)
+		catch (Throwable $ex)
 		{
 			$mailEntity->setError($ex->getMessage());
-
 			$this->saver->save($mailEntity);
 		}
 
 		return false;
 	}
 
-	private function loadRecipients(MailEntity $mailEntity): void
+	private function loadRecipients(MailEntity $mailEntity, Email $email): void
 	{
-		$this->to  = new AddressList();
-		$this->cc  = new AddressList();
-		$this->bcc = new AddressList();
-
 		if ($this->isDebugEnabled())
 		{
-			$this->to->add(
-				$this->mailConfig['debug']['email']
-			);
-
+			$email->to($this->mailConfig['debug']['email']);
 			return;
 		}
 
+		$to  = [];
+		$cc  = [];
+		$bcc = [];
+
 		foreach ($mailEntity->getRecipients() as $recipient)
 		{
+			$address = new Address($recipient->getEmail(), $recipient->getName() ?? '');
+
 			switch ($recipient->getType())
 			{
 				case RecipientEntity::TYPE_TO:
-					$this->to->add($recipient->getEmail(), $recipient->getName());
+					$to[] = $address;
 					break;
-
 				case RecipientEntity::TYPE_CC:
-					$this->cc->add($recipient->getEmail(), $recipient->getName());
+					$cc[] = $address;
 					break;
-
 				case RecipientEntity::TYPE_BCC:
-					$this->bcc->add($recipient->getEmail(), $recipient->getName());
+					$bcc[] = $address;
 					break;
 			}
+		}
+
+		if ($to)
+		{
+			$email->to(...$to);
+		}
+
+		if ($cc)
+		{
+			$email->cc(...$cc);
+		}
+
+		if ($bcc)
+		{
+			$email->bcc(...$bcc);
 		}
 	}
 
