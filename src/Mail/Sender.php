@@ -15,14 +15,14 @@ use Symfony\Component\Mime\Email;
 use Symfony\Component\Mime\Part\DataPart;
 use Throwable;
 
-readonly class Sender
+class Sender
 {
 	private array $mailConfig;
 
 	public function __construct(
-		private array $config,
-		private MailEntitySaver $saver,
-		private FileSystemHandler $attachmentFileSystemHandler
+		private readonly array $config,
+		private readonly MailEntitySaver $saver,
+		private readonly FileSystemHandler $attachmentFileSystemHandler
 	)
 	{
 	}
