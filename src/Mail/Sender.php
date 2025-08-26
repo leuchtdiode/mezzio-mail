@@ -65,7 +65,7 @@ readonly class Sender
 					);
 				}
 
-				// TODO encryption tls?
+				$dsn .= '?verify_peer=false';
 			}
 
 			$transport = Transport::fromDsn($dsn);
