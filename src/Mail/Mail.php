@@ -37,6 +37,8 @@ class Mail
 	 */
 	private array $attachments = [];
 
+	private bool $sendImmediately = false;
+
 	public function addTo(Recipient $recipient): void
 	{
 		$this->to[] = $recipient;
@@ -179,5 +181,15 @@ class Mail
 	public function setAttachments(array $attachments): void
 	{
 		$this->attachments = $attachments;
+	}
+
+	public function isSendImmediately(): bool
+	{
+		return $this->sendImmediately;
+	}
+
+	public function setSendImmediately(bool $sendImmediately): void
+	{
+		$this->sendImmediately = $sendImmediately;
 	}
 }

@@ -15,15 +15,15 @@ use Mail\Mail\Attachment\FileSystemHandler;
 use Mail\Mail\BodyCreator;
 use Mail\Mail\Mail;
 use Mail\Mail\Recipient;
+use Mail\Mail\Sender;
 use Throwable;
 
 class Queue
 {
 	private BodyCreator $bodyCreator;
-
 	private MailEntitySaver $saver;
-
 	private FileSystemHandler $attachmentFileSystemHandler;
+	private Sender $sender;
 
 	private Mail $mail;
 
@@ -37,12 +37,14 @@ class Queue
 	public function __construct(
 		BodyCreator $bodyCreator,
 		MailEntitySaver $saver,
-		FileSystemHandler $attachmentFileSystemHandler
+		FileSystemHandler $attachmentFileSystemHandler,
+		Sender $sender
 	)
 	{
 		$this->bodyCreator                 = $bodyCreator;
 		$this->saver                       = $saver;
 		$this->attachmentFileSystemHandler = $attachmentFileSystemHandler;
+		$this->sender                      = $sender;
 	}
 
 	/**
@@ -73,6 +75,11 @@ class Queue
 		$this->makeAttachments();
 
 		$this->saver->save($this->mailEntity);
+
+		if ($mail->isSendImmediately())
+		{
+			$this->sender->send($this->mailEntity);
+		}
 	}
 
 	private function makeFrom(): FromEntity
