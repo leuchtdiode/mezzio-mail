@@ -33,7 +33,7 @@ class MailEntity implements Entity
 	#[ORM\Column(type: 'datetime', nullable: true)]
 	private ?DateTime $sentAt = null;
 
-	#[ORM\Column(type: 'string', nullable: true)]
+	#[ORM\Column(type: 'string', length: 4000, nullable: true)]
 	private ?string $error = null;
 
 	/**
