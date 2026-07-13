@@ -40,16 +40,16 @@ class MailEntity implements Entity
 	 * @var Collection|RecipientEntity[]
 	 **/
 	#[ORM\OneToMany(
-		mappedBy: 'mail',
 		targetEntity: RecipientEntity::class,
+		mappedBy: 'mail',
 		cascade: [ 'all'],
 		orphanRemoval: true
 	)]
 	private Collection|array $recipients;
 
 	#[ORM\OneToOne(
-		mappedBy: 'mail',
 		targetEntity: FromEntity::class,
+		mappedBy: 'mail',
 		cascade: [ 'all'],
 		orphanRemoval: true
 	)]

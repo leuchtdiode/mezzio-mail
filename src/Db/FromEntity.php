@@ -23,8 +23,8 @@ class FromEntity
 	private ?string $name = null;
 
 	#[ORM\OneToOne(
-		inversedBy: 'from',
 		targetEntity: MailEntity::class,
+		inversedBy: 'from',
 		cascade: [ 'persist' ]
 	)]
 	#[ORM\JoinColumn(

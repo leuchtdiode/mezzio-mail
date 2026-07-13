@@ -72,7 +72,7 @@ class Sender
 
 			$from = $mailEntity->getFrom();
 
-			$email = (new Email())
+			$email = new Email()
 				->subject(
 					$this->isDebugEnabled()
 						? 'DEBUG: ' . $mailEntity->getSubject()

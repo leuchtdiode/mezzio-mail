@@ -14,6 +14,7 @@ return [
 				'paths' => [ __DIR__ . '/../src' ],
 			],
 			'orm_default'   => [
+				'class'   => AttributeDriver::class,
 				'drivers' => [
 					'Mail' => 'mail_entities',
 				],

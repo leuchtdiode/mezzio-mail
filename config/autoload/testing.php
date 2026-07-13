@@ -6,7 +6,7 @@ use Ramsey\Uuid\Doctrine\UuidType;
 return [
 
 	'templates' => [
-		'paths'  => [
+		'paths' => [
 			'testing' => [ __DIR__ . '/../../test/view' ],
 		],
 	],
@@ -15,9 +15,6 @@ return [
 		'configuration' => [
 			'orm_default' => [
 				'proxy_dir' => __DIR__ . '/../../data/DoctrineORMModule/Proxy',
-				'types'     => [
-					UuidType::NAME => UuidType::class,
-				],
 			],
 		],
 		'connection'    => [
@@ -28,6 +25,9 @@ return [
 					'path'        => __DIR__ . '/../../data/testing/test.sqlite',
 				],
 			],
+		],
+		'types'         => [
+			UuidType::NAME => UuidType::class,
 		],
 	],
 	'mail'     => [

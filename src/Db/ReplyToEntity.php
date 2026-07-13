@@ -24,8 +24,8 @@ class ReplyToEntity implements Entity
 	private ?string $name = null;
 
 	#[ORM\OneToOne(
-		inversedBy: 'replyTo',
 		targetEntity: MailEntity::class,
+		inversedBy: 'replyTo',
 		cascade: [ 'persist' ]
 	)]
 	#[ORM\JoinColumn(
