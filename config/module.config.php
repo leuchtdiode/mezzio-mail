@@ -8,16 +8,9 @@ return [
 
 	'doctrine' => [
 		'driver' => [
-			'mail_entities' => [
+			'orm_default' => [
 				'class' => AttributeDriver::class,
-				'cache' => 'array',
 				'paths' => [ __DIR__ . '/../src' ],
-			],
-			'orm_default'   => [
-				'class'   => AttributeDriver::class,
-				'drivers' => [
-					'Mail' => 'mail_entities',
-				],
 			],
 		],
 	],
