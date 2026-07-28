@@ -5,6 +5,7 @@ namespace Mail\Db;
 
 use Common\Db\Entity;
 use DateTime;
+use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -28,10 +29,10 @@ class MailEntity implements Entity
 	private string $body;
 
 	#[ORM\Column(type: 'datetime')]
-	private DateTime $createdAt;
+	private DateTimeInterface $createdAt;
 
 	#[ORM\Column(type: 'datetime', nullable: true)]
-	private ?DateTime $sentAt = null;
+	private ?DateTimeInterface $sentAt = null;
 
 	#[ORM\Column(type: 'string', length: 4000, nullable: true)]
 	private ?string $error = null;
@@ -42,7 +43,7 @@ class MailEntity implements Entity
 	#[ORM\OneToMany(
 		targetEntity: RecipientEntity::class,
 		mappedBy: 'mail',
-		cascade: [ 'all'],
+		cascade: [ 'all' ],
 		orphanRemoval: true
 	)]
 	private Collection|array $recipients;
@@ -50,15 +51,15 @@ class MailEntity implements Entity
 	#[ORM\OneToOne(
 		targetEntity: FromEntity::class,
 		mappedBy: 'mail',
-		cascade: [ 'all'],
+		cascade: [ 'all' ],
 		orphanRemoval: true
 	)]
 	private FromEntity $from;
 
 	#[ORM\OneToOne(
-		mappedBy: 'mail',
 		targetEntity: ReplyToEntity::class,
-		cascade: [ 'all'],
+		mappedBy: 'mail',
+		cascade: [ 'all' ],
 		orphanRemoval: true
 	)]
 	private ?ReplyToEntity $replyTo = null;
@@ -67,9 +68,9 @@ class MailEntity implements Entity
 	 * @var Collection|AttachmentEntity[]
 	 **/
 	#[ORM\OneToMany(
-		mappedBy: 'mail',
 		targetEntity: AttachmentEntity::class,
-		cascade: [ 'all'],
+		mappedBy: 'mail',
+		cascade: [ 'all' ],
 		orphanRemoval: true
 	)]
 	private Collection|array $attachments;
@@ -115,22 +116,22 @@ class MailEntity implements Entity
 		$this->body = $body;
 	}
 
-	public function getCreatedAt(): DateTime
+	public function getCreatedAt(): DateTimeInterface
 	{
 		return $this->createdAt;
 	}
 
-	public function setCreatedAt(DateTime $createdAt): void
+	public function setCreatedAt(DateTimeInterface $createdAt): void
 	{
 		$this->createdAt = $createdAt;
 	}
 
-	public function getSentAt(): ?DateTime
+	public function getSentAt(): ?DateTimeInterface
 	{
 		return $this->sentAt;
 	}
 
-	public function setSentAt(?DateTime $sentAt): void
+	public function setSentAt(?DateTimeInterface $sentAt): void
 	{
 		$this->sentAt = $sentAt;
 	}
