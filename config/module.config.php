@@ -26,4 +26,12 @@ return [
 			DefaultFactory::class,
 		],
 	],
+
+	'mail' => [
+		'monitoring' => [
+			'unsentMails' => [
+				'thresholdMinutes' => 60,
+			],
+		],
+	],
 ];

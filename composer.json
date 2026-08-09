@@ -26,6 +26,9 @@
 		"ramsey/uuid-doctrine": "^2.1.0",
 		"symfony/mailer": "^v8.1.0"
 	},
+	"suggest": {
+		"leuchtdiode/mezzio-monitoring": "Mandatory for health checks (^1.0.0)"
+	},
 	"require-dev": {
 		"leuchtdiode/mezzio-testing": "^1.0.0",
 		"mezzio/mezzio-laminasrouter": "^3.12.0"
