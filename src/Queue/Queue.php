@@ -8,6 +8,7 @@ use Exception;
 use Mail\Db\Attachment\Entity as AttachmentEntity;
 use Mail\Db\FromEntity;
 use Mail\Db\MailEntity;
+use Mail\Db\MailEntityRepository;
 use Mail\Db\MailEntitySaver;
 use Mail\Db\RecipientEntity;
 use Mail\Db\ReplyToEntity;
@@ -22,6 +23,7 @@ class Queue
 {
 	private BodyCreator $bodyCreator;
 	private MailEntitySaver $saver;
+	private MailEntityRepository $repository;
 	private FileSystemHandler $attachmentFileSystemHandler;
 	private Sender $sender;
 
@@ -37,12 +39,14 @@ class Queue
 	public function __construct(
 		BodyCreator $bodyCreator,
 		MailEntitySaver $saver,
+		MailEntityRepository $repository,
 		FileSystemHandler $attachmentFileSystemHandler,
 		Sender $sender
 	)
 	{
 		$this->bodyCreator                 = $bodyCreator;
 		$this->saver                       = $saver;
+		$this->repository                  = $repository;
 		$this->attachmentFileSystemHandler = $attachmentFileSystemHandler;
 		$this->sender                      = $sender;
 	}
@@ -76,7 +80,8 @@ class Queue
 
 		$this->saver->save($this->mailEntity);
 
-		if ($mail->isSendImmediately())
+		// claim atomically, a cron or worker may have picked the mail up between saving and sending it
+		if ($mail->isSendImmediately() && $this->repository->claim($this->mailEntity))
 		{
 			$this->sender->send($this->mailEntity);
 		}

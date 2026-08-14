@@ -152,6 +152,48 @@ class QueueTest extends BaseTestCase
 	}
 
 	/**
+	 * @throws Throwable
+	 */
+	public function test_mail_sent_immediately_is_claimed()
+	{
+		$mail = new Mail();
+		$mail->setSubject('test betreff');
+		$mail->setTo(
+			[
+				Recipient::create('recipient@anything.com', 'Empfänger'),
+			]
+		);
+		$mail->setFrom(
+			Recipient::create('from@anything.com', 'Absender')
+		);
+		$mail->setLayoutTemplate('testing::test-layout');
+		$mail->setContentTemplate('testing::test-template');
+		$mail->setPlaceholderValues(
+			(new TestPlaceholderValues())
+				->setPlaceholder('test-placeholder')
+		);
+		$mail->setSendImmediately(true);
+
+		$this->queue->add($mail);
+
+		$entities = $this
+			->getInstance(MailEntityRepository::class)
+			->findAll();
+
+		$this->assertCount(1, $entities);
+
+		/**
+		 * @var $entity MailEntity
+		 */
+		$entity = reset($entities);
+
+		// claimed before sending, so no cron or worker sends it a second time
+		$this->assertNotNull($entity->getProcessingAt());
+		$this->assertNotNull($entity->getSentAt());
+		$this->assertNull($entity->getError());
+	}
+
+	/**
 	 *
 	 */
 	private function cleanUpAttachmentsDir()

@@ -10,7 +10,7 @@ return [
 		'driver' => [
 			'orm_default' => [
 				'class' => AttributeDriver::class,
-				'paths' => [ __DIR__ . '/../src' ],
+				'paths' => [ __DIR__ . '/../src/Db' ],
 			],
 		],
 	],

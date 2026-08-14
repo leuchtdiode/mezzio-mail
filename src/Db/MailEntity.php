@@ -34,6 +34,12 @@ class MailEntity implements Entity
 	#[ORM\Column(type: 'datetime', nullable: true)]
 	private ?DateTimeInterface $sentAt = null;
 
+	/**
+	 * Set as soon as a cron or worker claimed the mail, so no other one picks it up and sends it a second time.
+	 */
+	#[ORM\Column(type: 'datetime', nullable: true)]
+	private ?DateTimeInterface $processingAt = null;
+
 	#[ORM\Column(type: 'string', length: 4000, nullable: true)]
 	private ?string $error = null;
 
@@ -134,6 +140,16 @@ class MailEntity implements Entity
 	public function setSentAt(?DateTimeInterface $sentAt): void
 	{
 		$this->sentAt = $sentAt;
+	}
+
+	public function getProcessingAt(): ?DateTimeInterface
+	{
+		return $this->processingAt;
+	}
+
+	public function setProcessingAt(?DateTimeInterface $processingAt): void
+	{
+		$this->processingAt = $processingAt;
 	}
 
 	public function getError(): ?string

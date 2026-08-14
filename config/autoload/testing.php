@@ -31,6 +31,7 @@ return [
 		],
 	],
 	'mail'     => [
+		'dsn'        => 'null://null', // nothing is really sent while testing
 		'attachment' => [
 			'storeDirectory' => __DIR__ . '/../../data/testing/attachments',
 		],
