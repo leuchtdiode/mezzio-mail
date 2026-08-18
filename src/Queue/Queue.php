@@ -21,34 +21,14 @@ use Throwable;
 
 class Queue
 {
-	private BodyCreator $bodyCreator;
-	private MailEntitySaver $saver;
-	private MailEntityRepository $repository;
-	private FileSystemHandler $attachmentFileSystemHandler;
-	private Sender $sender;
-
-	private Mail $mail;
-
-	private MailEntity $mailEntity;
-
-	/**
-	 * @var RecipientEntity[]
-	 */
-	private array $recipients;
-
 	public function __construct(
-		BodyCreator $bodyCreator,
-		MailEntitySaver $saver,
-		MailEntityRepository $repository,
-		FileSystemHandler $attachmentFileSystemHandler,
-		Sender $sender
+		private readonly BodyCreator $bodyCreator,
+		private readonly MailEntitySaver $saver,
+		private readonly MailEntityRepository $repository,
+		private readonly FileSystemHandler $attachmentFileSystemHandler,
+		private readonly Sender $sender
 	)
 	{
-		$this->bodyCreator                 = $bodyCreator;
-		$this->saver                       = $saver;
-		$this->repository                  = $repository;
-		$this->attachmentFileSystemHandler = $attachmentFileSystemHandler;
-		$this->sender                      = $sender;
 	}
 
 	/**
@@ -56,52 +36,50 @@ class Queue
 	 */
 	public function add(Mail $mail): void
 	{
-		$this->mail = $mail;
-
 		$body = $this->bodyCreator->forMail($mail);
 
-		$this->mailEntity = new MailEntity();
+		$mailEntity = new MailEntity();
 
-		$this->makeRecipients();
-
-		$this->mailEntity->setRecipients(
-			new ArrayCollection($this->recipients)
+		$mailEntity->setRecipients(
+			new ArrayCollection(
+				$this->makeRecipients($mail, $mailEntity)
+			)
 		);
-		$this->mailEntity->setFrom(
-			$this->makeFrom()
+		$mailEntity->setFrom(
+			$this->makeFrom($mail, $mailEntity)
 		);
-		$this->mailEntity->setReplyTo(
-			$this->makeReplyTo()
+		$mailEntity->setReplyTo(
+			$this->makeReplyTo($mail, $mailEntity)
 		);
-		$this->mailEntity->setSubject($mail->getSubject());
-		$this->mailEntity->setBody($body);
+		$mailEntity->setSubject($mail->getSubject());
+		$mailEntity->setBody($body);
 
-		$this->makeAttachments();
+		$this->makeAttachments($mail, $mailEntity);
 
-		$this->saver->save($this->mailEntity);
+		$this->saver->save($mailEntity);
 
 		// claim atomically, a cron or worker may have picked the mail up between saving and sending it
-		if ($mail->isSendImmediately() && $this->repository->claim($this->mailEntity))
+		if ($mail->isSendImmediately() && $this->repository->claim($mailEntity))
 		{
-			$this->sender->send($this->mailEntity);
+			$this->sender->send($mailEntity);
 		}
 	}
 
-	private function makeFrom(): FromEntity
+	private function makeFrom(Mail $mail, MailEntity $mailEntity): FromEntity
 	{
-		$mailFrom = $this->mail->getFrom();
+		$mailFrom = $mail->getFrom();
 
 		$fromEntity = new FromEntity();
 		$fromEntity->setEmail($mailFrom->getEmail());
 		$fromEntity->setName($mailFrom->getName());
-		$fromEntity->setMail($this->mailEntity);
+		$fromEntity->setMail($mailEntity);
 
 		return $fromEntity;
 	}
 
-	private function makeReplyTo(): ?ReplyToEntity
+	private function makeReplyTo(Mail $mail, MailEntity $mailEntity): ?ReplyToEntity
 	{
-		$replyTo = $this->mail->getReplyTo();
+		$replyTo = $mail->getReplyTo();
 
 		if (!$replyTo)
 		{
@@ -111,27 +89,30 @@ class Queue
 		$entity = new ReplyToEntity();
 		$entity->setEmail($replyTo->getEmail());
 		$entity->setName($replyTo->getName());
-		$entity->setMail($this->mailEntity);
+		$entity->setMail($mailEntity);
 
 		return $entity;
 	}
 
-	private function makeRecipients(): void
+	/**
+	 * @return RecipientEntity[]
+	 */
+	private function makeRecipients(Mail $mail, MailEntity $mailEntity): array
 	{
-		$this->addRecipientsForType($this->mail->getTo(), RecipientEntity::TYPE_TO);
-		$this->addRecipientsForType($this->mail->getCc(), RecipientEntity::TYPE_CC);
-		$this->addRecipientsForType($this->mail->getBcc(), RecipientEntity::TYPE_BCC);
+		return array_merge(
+			$this->makeRecipientsForType($mail->getTo(), RecipientEntity::TYPE_TO, $mailEntity),
+			$this->makeRecipientsForType($mail->getCc(), RecipientEntity::TYPE_CC, $mailEntity),
+			$this->makeRecipientsForType($mail->getBcc(), RecipientEntity::TYPE_BCC, $mailEntity)
+		);
 	}
 
 	/**
 	 * @param Recipient[] $recipients
+	 * @return RecipientEntity[]
 	 */
-	private function addRecipientsForType(array $recipients, int $type): void
+	private function makeRecipientsForType(array $recipients, int $type, MailEntity $mailEntity): array
 	{
-		if (!$recipients)
-		{
-			return;
-		}
+		$entities = [];
 
 		foreach ($recipients as $recipient)
 		{
@@ -139,23 +120,25 @@ class Queue
 			$recipientEntity->setEmail($recipient->getEmail());
 			$recipientEntity->setName($recipient->getName());
 			$recipientEntity->setType($type);
-			$recipientEntity->setMail($this->mailEntity);
+			$recipientEntity->setMail($mailEntity);
 
-			$this->recipients[] = $recipientEntity;
+			$entities[] = $recipientEntity;
 		}
+
+		return $entities;
 	}
 
 	/**
 	 * @throws Exception
 	 */
-	private function makeAttachments(): void
+	private function makeAttachments(Mail $mail, MailEntity $mailEntity): void
 	{
-		foreach ($this->mail->getAttachments() as $attachment)
+		foreach ($mail->getAttachments() as $attachment)
 		{
 			$fileName = $attachment->getFileName();
 
 			$attachmentEntity = new AttachmentEntity();
-			$attachmentEntity->setMail($this->mailEntity);
+			$attachmentEntity->setMail($mailEntity);
 			$attachmentEntity->setMimeType($attachment->getMimeType());
 			$attachmentEntity->setName(
 				pathinfo($fileName, PATHINFO_FILENAME)
@@ -164,7 +147,7 @@ class Queue
 				pathinfo($fileName, PATHINFO_EXTENSION)
 			);
 
-			$this->mailEntity
+			$mailEntity
 				->getAttachments()
 				->add($attachmentEntity);
 
