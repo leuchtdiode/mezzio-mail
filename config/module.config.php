@@ -3,6 +3,7 @@ namespace Mail;
 
 use Doctrine\ORM\Mapping\Driver\AttributeDriver;
 use Mail\Command\Queue\Send;
+use Mail\Health\UnsentMailsCheck;
 
 return [
 
@@ -24,6 +25,14 @@ return [
 	'dependencies' => [
 		'abstract_factories' => [
 			DefaultFactory::class,
+		],
+	],
+
+	'monitoring' => [
+		'health' => [
+			'checkers' => [
+				UnsentMailsCheck::class,
+			],
 		],
 	],
 

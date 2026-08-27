@@ -11,10 +11,6 @@ Every mail is claimed atomically before it is sent, so it is safe to run several
 each other. The claim is a single `UPDATE` which only hits the mail as long as it is unsent, has no error
 and is not claimed yet:
 
-```sql
-UPDATE mail_mails SET processingAt = ... WHERE id = ... AND processingAt IS NULL AND sentAt IS NULL AND error IS NULL
-```
-
 Only the one which got the row sends the mail, all others skip it and go on with the next one. Mails sent
 immediately (`Mail::setSendImmediately()`) are claimed as well, so a worker which picked the mail up in the
 meantime does not send it a second time.
@@ -31,15 +27,13 @@ The `processingAt` column is new, so a schema migration is necessary when updati
 configurable threshold, which means the queue is not processed anymore. Mails which failed with an error
 are ignored, because those are never picked up again anyway.
 
-It requires `leuchtdiode/mezzio-monitoring` and has to be registered in your application config:
+It requires `leuchtdiode/mezzio-monitoring`. The check registers itself through this module's config, so
+only the health endpoint itself has to be enabled in your application config:
 
 ```php
 'monitoring' => [
 	'health' => [
-		'enabled'  => true,
-		'checkers' => [
-			UnsentMailsCheck::class,
-		],
+		'enabled' => true,
 	],
 ],
 ```
