@@ -20,7 +20,8 @@ class Sender
 	public function __construct(
 		private readonly array $config,
 		private readonly MailEntitySaver $saver,
-		private readonly PartFactory $partFactory
+		private readonly PartFactory $partFactory,
+		private readonly HtmlToTextConverter $htmlToTextConverter
 	)
 	{
 	}
@@ -83,6 +84,11 @@ class Sender
 					)
 				)
 				->html($mailEntity->getBody(), 'utf-8');
+
+			if (($text = $this->htmlToTextConverter->convert($mailEntity->getBody())) !== '')
+			{
+				$email->text($text, 'utf-8');
+			}
 
 			// Reply-To
 			if (($replyTo = $mailEntity->getReplyTo()))
