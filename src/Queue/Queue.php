@@ -146,12 +146,18 @@ class Queue
 			$attachmentEntity->setExtension(
 				pathinfo($fileName, PATHINFO_EXTENSION)
 			);
+			$attachmentEntity->setFilePath($attachment->getFilePath());
+			$attachmentEntity->setContentId($attachment->getContentId());
 
 			$mailEntity
 				->getAttachments()
 				->add($attachmentEntity);
 
-			$this->attachmentFileSystemHandler->write($attachmentEntity, $attachment->getContent());
+			// a referenced file is read on sending, there is nothing to store
+			if ($attachment->getFilePath() === null)
+			{
+				$this->attachmentFileSystemHandler->write($attachmentEntity, $attachment->getContent());
+			}
 		}
 	}
 }

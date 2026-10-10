@@ -194,6 +194,56 @@ class QueueTest extends BaseTestCase
 	}
 
 	/**
+	 * @throws Throwable
+	 */
+	public function test_attachment_by_path_is_referenced_and_not_stored()
+	{
+		$mail = new Mail();
+		$mail->setSubject('test betreff');
+		$mail->setTo(
+			[
+				Recipient::create('recipient@anything.com', 'Empfänger'),
+			]
+		);
+		$mail->setFrom(
+			Recipient::create('from@anything.com', 'Absender')
+		);
+		$mail->setLayoutTemplate('testing::test-layout');
+		$mail->setContentTemplate('testing::test-template');
+		$mail->setPlaceholderValues(
+			(new TestPlaceholderValues())
+				->setPlaceholder('test-placeholder')
+		);
+		$mail->addAttachment(
+			Attachment::create()
+				->setFilePath(__DIR__ . '/../../files/logo.png')
+				->setContentId('logo@test')
+				->setFileName('logo.png')
+				->setMimeType('image/png')
+		);
+
+		$this->queue->add($mail);
+
+		$entities = $this
+			->getInstance(MailEntityRepository::class)
+			->findAll();
+
+		/**
+		 * @var $entity MailEntity
+		 */
+		$entity = reset($entities);
+
+		$attachments = $entity->getAttachments();
+
+		$this->assertCount(1, $attachments);
+		$this->assertEquals(__DIR__ . '/../../files/logo.png', $attachments[0]->getFilePath());
+		$this->assertEquals('logo@test', $attachments[0]->getContentId());
+		$this->assertFileDoesNotExist(
+			__DIR__ . '/../../../data/testing/attachments/' . $attachments[0]->getId() . '.png'
+		);
+	}
+
+	/**
 	 *
 	 */
 	private function cleanUpAttachmentsDir()

@@ -27,6 +27,18 @@ class Entity implements DbEntity
 	#[ORM\Column(type: 'string')]
 	private string $mimeType;
 
+	/**
+	 * set when the attachment is read from this path on sending instead of from the attachment store
+	 */
+	#[ORM\Column(type: 'string', nullable: true)]
+	private ?string $filePath = null;
+
+	/**
+	 * set when the attachment is inline
+	 */
+	#[ORM\Column(type: 'string', nullable: true)]
+	private ?string $contentId = null;
+
 	#[ORM\ManyToOne(
 		targetEntity: MailEntity::class,
 		cascade: [ 'persist' ],
@@ -85,6 +97,26 @@ class Entity implements DbEntity
 	public function setMimeType(string $mimeType): void
 	{
 		$this->mimeType = $mimeType;
+	}
+
+	public function getFilePath(): ?string
+	{
+		return $this->filePath;
+	}
+
+	public function setFilePath(?string $filePath): void
+	{
+		$this->filePath = $filePath;
+	}
+
+	public function getContentId(): ?string
+	{
+		return $this->contentId;
+	}
+
+	public function setContentId(?string $contentId): void
+	{
+		$this->contentId = $contentId;
 	}
 
 	public function getMail(): MailEntity

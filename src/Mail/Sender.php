@@ -3,16 +3,14 @@ declare(strict_types=1);
 
 namespace Mail\Mail;
 
-use Common\Util\Encoding;
 use DateTime;
 use Mail\Db\MailEntity;
 use Mail\Db\MailEntitySaver;
 use Mail\Db\RecipientEntity;
-use Mail\Mail\Attachment\FileSystemHandler;
+use Mail\Mail\Attachment\PartFactory;
 use Symfony\Component\Mailer\Transport;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
-use Symfony\Component\Mime\Part\DataPart;
 use Throwable;
 
 class Sender
@@ -22,7 +20,7 @@ class Sender
 	public function __construct(
 		private readonly array $config,
 		private readonly MailEntitySaver $saver,
-		private readonly FileSystemHandler $attachmentFileSystemHandler
+		private readonly PartFactory $partFactory
 	)
 	{
 	}
@@ -98,24 +96,10 @@ class Sender
 
 			foreach ($mailEntity->getAttachments() as $attachmentEntity)
 			{
-				$content = $this->attachmentFileSystemHandler->read($attachmentEntity);
-				if (!$content)
+				if (($part = $this->partFactory->create($attachmentEntity)))
 				{
-					continue;
+					$email->addPart($part);
 				}
-
-				$filename = Encoding::utf8Decode(
-					$attachmentEntity->getName() . '.' . $attachmentEntity->getExtension()
-				);
-
-				$email->addPart(
-					new DataPart(
-						$content,
-						$filename,
-						$attachmentEntity->getMimeType(),
-						'base64'
-					)
-				);
 			}
 
 			$transport->send($email);
